@@ -1,3 +1,12 @@
+# Project-specific
+output
+
+# Downloaded from `make dependencies`
+slpp.py
+
+# PyCharm
+.idea
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

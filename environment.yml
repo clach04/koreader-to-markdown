@@ -1,0 +1,32 @@
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - bcrypt
+  - ca-certificates
+  - certifi
+  - cffi
+  - click
+  - cryptography
+  - libcxx
+  - libffi
+  - libsodium
+  - ncurses
+  - openssl
+  - paramiko
+  - pip
+  - pycparser
+  - pynacl
+  - python
+  - python-dotenv
+  - python_abi
+  - readline
+  - setuptools
+  - six
+  - sqlite
+  - tk
+  - tzdata
+  - wheel
+  - xz
+  - zlib
+prefix: ./env
