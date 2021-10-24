@@ -2,20 +2,26 @@ import os
 import re
 from datetime import datetime
 from pathlib import Path
+import warnings
 
 import dotenv
+import inquirer
 import paramiko
 
 from slpp import slpp as lua
 
 
-def get_ssh(host, user):
+def get_ssh(host, user, passphrase=None):
     ssh = paramiko.SSHClient()
     ssh.load_system_host_keys()
+
     ssh.connect(
         hostname=host,
-        username=user
+        username=user,
+        password='',
+        passphrase=passphrase
     )
+
     return ssh
 
 
@@ -160,8 +166,28 @@ def sort_bookmarks(bookmarks_dict):
     return bookmarks_list
 
 
+def ask_passphrase():
+    passphrase = inquirer.password(
+            'name',
+            message="What's your name?"
+            ),
+
+
 def main():
-    ssh = get_ssh(os.environ['PARAMIKO_HOST'], os.environ['PARAMIKO_USER'])
+    try:
+        ssh = get_ssh(
+            os.environ['SSH_HOST'],
+            os.environ['SSH_USER']
+        )
+    except paramiko.ssh_exception.PasswordRequiredException as e:
+        warnings.warn(e.args[0])
+        passphrase = inquirer.password("Enter your private key's passphrase:")
+        ssh = get_ssh(
+            os.environ['SSH_HOST'],
+            os.environ['SSH_USER'],
+            passphrase
+        )
+
     sidecar_paths = get_sidecar_paths(ssh, [
         '/mnt/onboard/.adds/koreader/articles/',
         '/mnt/onboard/.adds/koreader/books/',
