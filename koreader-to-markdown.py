@@ -108,11 +108,17 @@ def write_markdown(output_path, authors, title, bookmarks):
         max(bookmark_dates), '%Y-%m-%d %H:%M:%S'
     ) if len(bookmark_dates) > 1 else None
 
+    prefix = ''
+    if end is not None:
+        prefix = end.strftime('%Y%m%d - ')
+    elif start is not None:
+        prefix = start.strftime('%Y%m%d - ')
+
     # Get current datetime
     modified = datetime.now().isoformat()
 
     # Construct the output file path and empty it
-    md_file = output_path / '{}.md'.format(title)
+    md_file = output_path / '{}{}.md'.format(prefix, title)
     md_file.write_text('')
 
     # Add frontmatter and headers
@@ -197,6 +203,8 @@ def main():
     for sidecar_path in sidecar_paths:
         if len(sidecar_path) == 0:
             continue
+
+        print(sidecar_path)
 
         sidecar_contents = get_sidecar_contents(ssh, sidecar_path).decode()
 

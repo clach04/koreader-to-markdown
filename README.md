@@ -1,6 +1,6 @@
 # KOReader to Markdown
 
-Read bookmarks from [KOReader](https://koreader.rocks/) sidecars to Markdown files per book
+Read bookmarks from [KOReader](https://koreader.rocks/) sidecars to Markdown files per book, prefixed with the date you added the most recent bookmark
 
 ## How-to
 
