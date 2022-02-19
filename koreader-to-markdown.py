@@ -1,7 +1,9 @@
-import os
-import re
+#!/usr/bin/env python
+
 from datetime import datetime
+import os
 from pathlib import Path
+import re
 import warnings
 
 import dotenv
@@ -54,7 +56,8 @@ def get_sidecar_paths(ssh, start_from):
 
 def get_sidecar_lua_path(ssh, sidecar_path):
     sidecar_lua_stdout = exec_command(
-        ssh, 'find "{}" -type f -name "metadata.*.lua"'.format(sidecar_path))
+        ssh, 'find "{}" -type f -name "metadata.*.lua"'.format(sidecar_path)
+    )
     sidecar_lua_paths = sidecar_lua_stdout.decode().split('\n')
     return sidecar_lua_paths[0]
 
@@ -99,6 +102,10 @@ def parse_bookmark(bookmark):
 def write_markdown(output_path, authors, title, bookmarks):
     output_path.mkdir(parents=True, exist_ok=True)
 
+    if len(bookmarks) < 1:
+        warnings.warn('len(bookmarks) < 1')
+        return
+
     # Get start and end dates from the bookmarks
     bookmark_dates = [b['datetime'] for b in bookmarks]
     start = datetime.strptime(
@@ -127,24 +134,26 @@ def write_markdown(output_path, authors, title, bookmarks):
         if start is not None:
             md.write('created: {}\n'.format(start.isoformat()))
         md.write(
-            'modified: {2}\n'
-            'tags:\n'
-            '  - boek\n'
-            '  - {0}\n\n'
+            'modified: {2}\n\n'
             '---\n\n'
             '# {0}\n\n'
             '- Van [[{1}]]\n'.format(
                 title,
                 authors,
                 modified
-            ))
+            )
+        )
 
         if start is not None:
-            md.write('- Eerste highlight gezet op {}\n'
-                     ''.format(start.strftime('[[DAGBOEK/%Y/%Y-%m/%Y-%m-%d]]')))
+            md.write(
+                '- Eerste highlight gezet op {}\n'
+                ''.format(start.strftime('[[DAGBOEK/%Y/%Y-%m/%Y-%m-%d]]'))
+            )
         if end is not None:
-            md.write('- Laatste highlight gezet op {}'
-                     '\n'.format(end.strftime('[[DAGBOEK/%Y/%Y-%m/%Y-%m-%d]]')))
+            md.write(
+                '- Laatste highlight gezet op {}'
+                '\n'.format(end.strftime('[[DAGBOEK/%Y/%Y-%m/%Y-%m-%d]]'))
+            )
 
         md.write('\n## Highlights\n')
 
@@ -172,13 +181,6 @@ def sort_bookmarks(bookmarks_dict):
     return bookmarks_list
 
 
-def ask_passphrase():
-    passphrase = inquirer.password(
-            'name',
-            message="What's your name?"
-            ),
-
-
 def main():
     try:
         ssh = get_ssh(
@@ -186,7 +188,7 @@ def main():
             os.environ['SSH_USER']
         )
     except paramiko.ssh_exception.PasswordRequiredException as e:
-        warnings.warn(e.args[0])
+        warnings.warn('{}: {}'.format(e.__class__.__name__, e.args[0]))
         passphrase = inquirer.password("Enter your private key's passphrase:")
         ssh = get_ssh(
             os.environ['SSH_HOST'],
@@ -194,11 +196,13 @@ def main():
             passphrase
         )
 
-    sidecar_paths = get_sidecar_paths(ssh, [
-        '/mnt/onboard/.adds/koreader/articles/',
-        '/mnt/onboard/.adds/koreader/books/',
-        '/mnt/onboard/.adds/koreader/comics/'
-    ])
+    sidecar_paths = get_sidecar_paths(
+        ssh, [
+            '/mnt/onboard/.adds/koreader/articles/',
+            '/mnt/onboard/.adds/koreader/books/',
+            '/mnt/onboard/.adds/koreader/comics/'
+        ]
+    )
 
     for sidecar_path in sidecar_paths:
         if len(sidecar_path) == 0:
@@ -206,28 +210,31 @@ def main():
 
         print(sidecar_path)
 
-        sidecar_contents = get_sidecar_contents(ssh, sidecar_path).decode()
+        try:
+            sidecar_contents = get_sidecar_contents(ssh, sidecar_path).decode()
 
-        # Clean that sidecar str, then decode into a dict
-        sidecar_contents = re.sub('^[^{]*', '', sidecar_contents).strip()
-        sidecar_lua = lua.decode(sidecar_contents)
+            # Clean that sidecar str, then decode into a dict
+            sidecar_contents = re.sub('^[^{]*', '', sidecar_contents).strip()
+            sidecar_lua = lua.decode(sidecar_contents)
 
-        # Get book authors, title and dates
-        authors = sidecar_lua['doc_props']['authors']
-        title = sidecar_lua['doc_props']['title']
+            # Get book authors, title and dates
+            authors = sidecar_lua['doc_props']['authors']
+            title = sidecar_lua['doc_props']['title']
 
-        # Sort bookmarks based on `page`
-        sorted_bookmarks = sort_bookmarks(sidecar_lua['bookmarks'])
+            # Sort bookmarks based on `page`
+            sorted_bookmarks = sort_bookmarks(sidecar_lua['bookmarks'])
 
-        # Write the bookmarks to the `output` folder
-        write_markdown(
-            Path('output').resolve(),
-            authors,
-            title,
-            sorted_bookmarks
-        )
+            # Write the bookmarks to the `output` folder
+            write_markdown(
+                Path('output').resolve(),
+                authors,
+                title,
+                sorted_bookmarks
+            )
+        except KeyError as e:
+            warnings.warn('{}: {}'.format(e.__class__.__name__, e.args[0]))
 
 
 if __name__ == '__main__':
-    dotenv.load_dotenv()
+    dotenv.load_dotenv(override=True)
     main()
