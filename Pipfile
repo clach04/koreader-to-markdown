@@ -5,8 +5,8 @@ name = "pypi"
 
 [packages]
 paramiko = "*"
-python-dotenv = "*"
 inquirer = "*"
+python-dotenv = "*"
 
 [dev-packages]
 
